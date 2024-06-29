@@ -18,15 +18,18 @@ rename_file_or_directory() {
     local path="$1"
     local dir=$(dirname "$path")
     local base=$(basename "$path")
-    local extension="${base##*.}"  # Extract extension
+    local extension="${base##*.}"  # Extract extension, if any
     local filename="${base%.*}"    # Extract filename without extension
-    local new_base=$(clean_text "$filename")."$extension"
-    local new_base_no_space=$(clean_text "$filename")
-
+    local new_base=$(clean_text "$filename")
+    
+    if [ -n "$extension" ]; then
+        new_base="$new_base.$extension"
+    fi
+    
     # Rename the file or directory if the name has changed
     if [ "$base" != "$new_base" ]; then
-        mv "$path" "$dir/$new_base_no_space.$extension"
-        echo "Renamed: $path -> $dir/$new_base_no_space.$extension"
+        mv "$path" "$dir/$new_base"
+        echo "Renamed: $path -> $dir/$new_base"
     fi
 }
 
@@ -34,20 +37,20 @@ process_path() {
     local path="$1"
     
     if [ -f "$path" ]; then
-        # If it's a file, process as a file
+        # If it's a file, clean and rename it
         rename_file_or_directory "$path"
         
-        # Clean the content of the file
-        sed -i -e 's/ä/ae/g' -e 's/ö/oe/g' -e 's/ü/ue/g' \
-               -e 's/Ä/Ae/g' -e 's/Ö/Oe/g' -e 's/Ü/Ue/g' \
-               -e 's/ß/ss/g' "$path"
+        # Clean the content of the file (optional step, uncomment if needed)
+        # sed -i -e 's/ä/ae/g' -e 's/ö/oe/g' -e 's/ü/ue/g' \
+        #        -e 's/Ä/Ae/g' -e 's/Ö/Oe/g' -e 's/Ü/Ue/g' \
+        #        -e 's/ß/ss/g' "$path"
         
         # Remove all remaining special characters and replace space with periods (dot)
-        tr -cd '[:alnum:]' < "$path" | tr ' ' '.' > "${path}.tmp" && mv "${path}.tmp" "$path"
+        # tr -cd '[:alnum:]' < "$path" | tr ' ' '.' > "${path}.tmp" && mv "${path}.tmp" "$path"
         
         echo "$path is renamed and cleaned!"
     elif [ -d "$path" ]; then
-        # If it's a directory, process as a directory
+        # If it's a directory, clean and rename it
         rename_file_or_directory "$path"
         
         # Recursively process all files and directories inside this directory
