@@ -9,8 +9,8 @@ clean_text() {
                                -e 's/ß/ss/g')
     
     # Remove all remaining special characters and replace space with periods (dot)
-    text=$(echo "$text" | tr -cd '[:alnum:]\n' | tr ' ' '.')
-    
+    text=$(echo "$text" | tr -cd '[:alnum:]' | tr ' ' '.')
+
     echo "$text"
 }
 
@@ -18,14 +18,17 @@ process_file() {
     local file="$1"
     local dir=$(dirname "$file")
     local base=$(basename "$file")
-    local new_base=$(clean_text "$base")
+    local extension="${base##*.}"  # Extract extension
+    local filename="${base%.*}"    # Extract filename without extension
+    local new_base=$(clean_text "$filename")."$extension"
     
     # Clean the content of the file
     sed -i -e 's/ä/ae/g' -e 's/ö/oe/g' -e 's/ü/ue/g' \
            -e 's/Ä/Ae/g' -e 's/Ö/Oe/g' -e 's/Ü/Ue/g' \
            -e 's/ß/ss/g' "$file"
     
-    tr -cd '[:alnum:]\n | tr ' ' '.'' < "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+    # Remove all remaining special characters and replace space with periods (dot)
+    tr -cd '[:alnum:]' < "$file" | tr ' ' '.' > "${file}.tmp" && mv "${file}.tmp" "$file"
     
     # Rename the file if the name has changed
     if [ "$base" != "$new_base" ]; then
@@ -33,7 +36,7 @@ process_file() {
         echo "Renamed: $file -> $dir/$new_base"
     fi
     
-    echo "$file is renamed!"
+    echo "$file is renamed and cleaned!"
 }
 
 # Check if a directory is provided
@@ -51,7 +54,7 @@ if [ ! -d "$dir_path" ]; then
 fi
 
 # Process all files in the directory and subdirectories
-find "$dir_path" -type f | while read file; do
+find "$dir_path" -type f | while read -r file; do
     process_file "$file"
 done
 
