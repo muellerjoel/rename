@@ -55,4 +55,4 @@ find "$dir_path" -type f | while read file; do
     process_file "$file"
 done
 
-echo "All files are renamed and cleaned"
+echo "All data is renamed and cleaned"
