@@ -14,29 +14,47 @@ clean_text() {
     echo "$text"
 }
 
-process_file() {
-    local file="$1"
-    local dir=$(dirname "$file")
-    local base=$(basename "$file")
+rename_file_or_directory() {
+    local path="$1"
+    local dir=$(dirname "$path")
+    local base=$(basename "$path")
     local extension="${base##*.}"  # Extract extension
     local filename="${base%.*}"    # Extract filename without extension
     local new_base=$(clean_text "$filename")."$extension"
-    
-    # Clean the content of the file
-    sed -i -e 's/ä/ae/g' -e 's/ö/oe/g' -e 's/ü/ue/g' \
-           -e 's/Ä/Ae/g' -e 's/Ö/Oe/g' -e 's/Ü/Ue/g' \
-           -e 's/ß/ss/g' "$file"
-    
-    # Remove all remaining special characters and replace space with periods (dot)
-    tr -cd '[:alnum:]' < "$file" | tr ' ' '.' > "${file}.tmp" && mv "${file}.tmp" "$file"
-    
-    # Rename the file if the name has changed
+    local new_base_no_space=$(clean_text "$filename")
+
+    # Rename the file or directory if the name has changed
     if [ "$base" != "$new_base" ]; then
-        mv "$file" "$dir/$new_base"
-        echo "Renamed: $file -> $dir/$new_base"
+        mv "$path" "$dir/$new_base_no_space.$extension"
+        echo "Renamed: $path -> $dir/$new_base_no_space.$extension"
     fi
+}
+
+process_path() {
+    local path="$1"
     
-    echo "$file is renamed and cleaned!"
+    if [ -f "$path" ]; then
+        # If it's a file, process as a file
+        rename_file_or_directory "$path"
+        
+        # Clean the content of the file
+        sed -i -e 's/ä/ae/g' -e 's/ö/oe/g' -e 's/ü/ue/g' \
+               -e 's/Ä/Ae/g' -e 's/Ö/Oe/g' -e 's/Ü/Ue/g' \
+               -e 's/ß/ss/g' "$path"
+        
+        # Remove all remaining special characters and replace space with periods (dot)
+        tr -cd '[:alnum:]' < "$path" | tr ' ' '.' > "${path}.tmp" && mv "${path}.tmp" "$path"
+        
+        echo "$path is renamed and cleaned!"
+    elif [ -d "$path" ]; then
+        # If it's a directory, process as a directory
+        rename_file_or_directory "$path"
+        
+        # Recursively process all files and directories inside this directory
+        for entry in "$path"/*; do
+            process_path "$entry"
+        done
+    fi
 }
 
 # Check if a directory is provided
@@ -53,9 +71,7 @@ if [ ! -d "$dir_path" ]; then
     exit 1
 fi
 
-# Process all files in the directory and subdirectories
-find "$dir_path" -type f | while read -r file; do
-    process_file "$file"
-done
+# Process the provided directory and its subdirectories
+process_path "$dir_path"
 
 echo "All data is renamed and cleaned"
