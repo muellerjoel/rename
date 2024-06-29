@@ -11,8 +11,8 @@ clean_text() {
     # Replace spaces with dots (.)
     text=$(echo "$text" | tr ' ' '.')
 
-    # Remove parentheses and replace double dots with single dot
-    text=$(echo "$text" | tr -d '()' | sed -e 's/\.\.*/./g')
+    # Remove parentheses, commas and replace double dots with single dot
+    text=$(echo "$text" | tr -d '(),' | sed -e 's/\.\.*/./g')
 
     echo "$text"
 }
@@ -53,15 +53,6 @@ process_path() {
         elif [ -f "$entry" ]; then
             # If it's a file, rename it
             rename_file_or_directory "$entry"
-            
-            # Clean the content of the file (optional step, uncomment if needed)
-            # sed -i -e 's/ä/ae/g' -e 's/ö/oe/g' -e 's/ü/ue/g' \
-            #        -e 's/Ä/Ae/g' -e 's/Ö/Oe/g' -e 's/Ü/Ue/g' \
-            #        -e 's/ß/ss/g' "$entry"
-            
-            # Remove all remaining special characters and replace space with dots (.)
-            # tr -cd '[:alnum:]' < "$entry" | tr ' ' '.' > "${entry}.tmp" && mv "${entry}.tmp" "$entry"
-            
             echo "$entry is renamed and cleaned!"
         fi
     done
@@ -91,3 +82,4 @@ process_path "$dir_path"
 rename_file_or_directory "$dir_path"
 
 echo "All data is renamed and cleaned"
+
